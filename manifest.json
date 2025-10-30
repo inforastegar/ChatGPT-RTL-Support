@@ -1,9 +1,9 @@
 {
-  "version": "1.5.0",
+  "version": "1.5.1",
   "manifest_version": 3,
   "name": "ChatGPT RTL Support (Farsi/Arabic)",
   "author": "reza rastegar",
-  "description": "RTL language 👅 support 👀 for ChatGPT 🤖",
+  "description": "RTL language 👅 support 👀 for ChatGPT 🤖 (compatible with ChatGPT Atlas)",
   "icons": {
     "16": "assets/img/logo.png",
     "32": "assets/img/logo.png",
@@ -16,10 +16,10 @@
   "background": {
     "service_worker": "background.js"
   },
-  "host_permissions": ["https://chatgpt.com/*"],
+  "host_permissions": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
   "content_scripts": [
     {
-      "matches": ["https://chatgpt.com/*"],
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
       "js": ["content.js"]
     }
   ],
