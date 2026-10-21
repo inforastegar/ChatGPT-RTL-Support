@@ -1,37 +1,19 @@
 {
-  "version": "1.5.1",
+  "version": "1.6.3",
   "manifest_version": 3,
   "name": "ChatGPT RTL Support (Farsi/Arabic)",
   "author": "reza rastegar",
-  "description": "RTL language 👅 support 👀 for ChatGPT 🤖 (compatible with ChatGPT Atlas)",
+  "description": "Dynamic Persian/Arabic RTL support for ChatGPT",
   "icons": {
-    "16": "assets/img/logo.png",
-    "32": "assets/img/logo.png",
-    "48": "assets/img/logo.png",
-    "128": "assets/img/logo.png"
+    "16": "assets/img/logo.png", "32": "assets/img/logo.png",
+    "48": "assets/img/logo.png", "128": "assets/img/logo.png"
   },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline' https://v1.fontapi.ir;"
-  },
-  "background": {
-    "service_worker": "background.js"
-  },
-  "host_permissions": [
-    "https://chatgpt.com/*",
-    "https://chat.openai.com/*"
-  ],
-  "content_scripts": [
-    {
-      "matches": [
-        "https://chatgpt.com/*",
-        "https://chat.openai.com/*"
-      ],
-      "js": ["content.js"]
-    }
-  ],
-  "permissions": ["scripting", "storage"],
-  "action": {
-    "default_title": "ChatGPT RTL Support",
-    "default_popup": "popup.html"
-  }
+  "background": {"service_worker": "background.js"},
+  "host_permissions": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+  "content_scripts": [{
+    "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+    "js": ["content.js"], "run_at": "document_idle"
+  }],
+  "permissions": ["storage", "scripting", "tabs", "fontSettings"],
+  "action": {"default_title": "ChatGPT RTL Support", "default_popup": "popup.html"}
 }

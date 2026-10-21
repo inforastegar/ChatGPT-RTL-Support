@@ -1,0 +1,65 @@
+name: RTL extension regression
+
+on:
+  push:
+    branches:
+      - main
+      - "fix/**"
+      - "chore/**"
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  source-validation:
+    name: JavaScript and manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check extension JavaScript syntax
+        run: |
+          set -euo pipefail
+          for file in content.js popup.js background.js assets/script/addContent.js assets/script/removeContent.js diagnostics/live_dom_probe.js; do
+            node --check "$file"
+          done
+      - name: Validate Manifest V3 structure
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          manifest = json.loads(Path("manifest.json").read_text(encoding="utf-8"))
+          assert manifest["manifest_version"] == 3
+          assert manifest["action"]["default_popup"] == "popup.html"
+          assert any("chatgpt.com" in match for entry in manifest["content_scripts"] for match in entry["matches"])
+          assert "content.js" in [f for entry in manifest["content_scripts"] for f in entry["js"]]
+          print("Manifest: PASS", manifest["version"])
+          PY
+
+  browser-regression:
+    name: Chromium DOM and popup regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: tests/requirements.txt
+      - name: Install Playwright
+        run: python -m pip install -r tests/requirements.txt
+      - name: Install Chromium and dependencies
+        run: python -m playwright install --with-deps chromium
+      - name: Run synthetic DOM and popup regressions
+        run: |
+          set -euo pipefail
+          python tests/test_mock_browser.py
+          python tests/test_dom_probe_v162.py
+          python tests/test_auto_reconcile.py

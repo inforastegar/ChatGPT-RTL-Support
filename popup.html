@@ -1,52 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <!-- Metadata for character set, viewport, and compatibility -->
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>ChatGPT RTL Support</title>
-    <!-- Stylesheet -->
-    <link rel="stylesheet" href="./popup.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatGPT RTL Support</title>
+  <link rel="stylesheet" href="./popup.css">
+  <link rel="stylesheet" href="./popup-v161.css">
 </head>
-
 <body>
-    <!-- Popup container -->
-    <div class="popup">
-        <div>
-            <!-- Title section with colored spans -->
-            <a href="https://zaya.io/f89a0" target="_blank" class="coffee">
-                <p>Buy Me a Coffee ☕️</p>
-            </a>
-            <h1>
-                ChatGPT <span class="eye">🤖</span> RTL Support
-            </h1>
-            <p class="messageAlert"></p>
-            <!-- Toggle button container -->
-            <div class="button">
-                <!-- On state -->
-                <div class="half" style="left: 5px;">On</div>
-                <!-- Off state -->
-                <div class="half" style="right: 5px; text-align: right;">Off</div>
-                <!-- Circular indicator -->
-                <div class="circle"></div>
-            </div>
-        </div>
-        <div>
-            <img src="./assets/img/popup-optimized.webp" alt="vector" class="image">
-        </div>
+  <div class="popup">
+    <div>
+      <a href="https://zaya.io/f89a0" target="_blank" rel="noopener noreferrer" class="coffee"><p>Buy Me a Coffee ☕️</p></a>
+      <h1>ChatGPT <span class="eye">🤖</span> RTL Support</h1>
+      <p class="messageAlert" role="status"></p>
+      <button class="button" type="button" role="switch" aria-checked="false" aria-label="Enable RTL">
+        <span class="half" style="left: 0;">On</span>
+        <span class="half" style="right: 0;">Off</span>
+        <span class="circle"></span>
+      </button>
+      <div class="font-setting">
+        <label for="font-choice">Font / فونت</label>
+        <select id="font-choice" aria-label="Select font by source"><optgroup label="ChatGPT / Non-system"><option value="default">Default (ChatGPT)</option></optgroup><optgroup id="system-font-group" label="Installed system fonts"></optgroup></select>
+        <div class="font-legend"><span class="font-legend-default">● ChatGPT default</span><span class="font-legend-system">● System fonts</span></div>
+        <small>Fonts installed on your computer, detected by Chrome.</small>
+        <label for="sidebar-direction">Sidebar title alignment</label>
+        <select id="sidebar-direction" aria-label="Sidebar title alignment"><option value="auto">Auto (ChatGPT default)</option><option value="rtl">Right</option><option value="ltr">Left</option></select>
+        <small>Changes alignment only; sidebar font and size remain original.</small>
+        <label for="font-size">Font size / اندازه فونت: <output id="font-size-value" for="font-size">Default</output></label>
+        <input type="range" id="font-size" min="12" max="28" step="1" value="16" aria-label="Font size" list="font-size-marks">
+        <datalist id="font-size-marks"><option value="12"></option><option value="16"></option><option value="20"></option><option value="24"></option><option value="28"></option></datalist>
+        <button type="button" id="font-size-reset" class="font-size-reset">Reset to default size</button>
+        <small>Default or 12–28 px. Only RTL conversation text changes; sidebar stays untouched.</small>
+      </div>
     </div>
-    <!-- Footer link -->
-    <div class="links">
-        <a href="https://rastegar.info/chatgpt-rtl-support/" target="_blank">About</a>
-        <a href="https://rastegar.info/chatgpt-rtl-support/#privacy" target="_blank">Privacy
-            policy</a>
-        <a href="https://github.com/rastegardev/ChatGPT-RTL-Support" target="_blank">Source code</a>
-        <a href="https://github.com/rastegardev/ChatGPT-RTL-Support/issues" target="_blank">Report issue</a>
-    </div>
-    <!-- JavaScript -->
-    <script src="./popup.js"></script>
+    <div><img src="./assets/img/popup-optimized.webp" alt="RTL illustration" class="image"></div>
+  </div>
+  <div class="links">
+    <a href="https://rastegar.info/chatgpt-rtl-support/" target="_blank" rel="noopener noreferrer">About</a>
+    <a href="https://rastegar.info/chatgpt-rtl-support/#privacy" target="_blank" rel="noopener noreferrer">Privacy policy</a>
+    <a href="https://github.com/ehsanrs2/ChatGPT-RTL-Support" target="_blank" rel="noopener noreferrer">Source code</a>
+    <a href="https://github.com/inforastegar/ChatGPT-RTL-Support/issues" target="_blank" rel="noopener noreferrer">Report issue</a>
+  </div>
+  <script src="./popup.js"></script>
 </body>
-
 </html>

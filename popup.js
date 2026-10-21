@@ -1,104 +1,107 @@
-// This code should execute when the popup of the extension is displayed
-document.addEventListener("DOMContentLoaded", function () {
-  // Function to check the website address
-  function checkURL(url) {
-    return /^https:\/\/chatgpt\.com\/.*/.test(url);
-  }
-
-  // Requesting information about the current tab
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    const currentURL = tabs[0].url;
-
-    // If the website address doesn't match the pattern
-    if (!checkURL(currentURL)) {
-      // Display a message to the user
-      const message = document.createElement("p");
-      message.innerHTML =
-        '<p>The website address is not correct. This extension only works at <a href="https://chatgpt.com/" target="_blank">chat.openai.com</a></p>';
-
-      // Adding the message to the HTML tag with the class 'popup'
-      document.querySelector(".messageAlert").appendChild(message);
-
-      // Hide the popup
-      document.querySelector(".button").style.display = "none";
+/* Local installed font picker: Chrome fontSettings API (Manifest V3). */
+(() => {
+  'use strict';
+  document.addEventListener('DOMContentLoaded', async () => {
+    const button = document.querySelector('.button');
+    const eye = document.querySelector('.eye');
+    const notice = document.querySelector('.messageAlert');
+    const fonts = document.getElementById('font-choice');
+    const systemFonts = document.getElementById('system-font-group');
+    const renderFontSource = () => { fonts.dataset.source = fonts.value === 'default' ? 'default' : 'system'; };
+    const sizeInput = document.getElementById('font-size');
+    const sizeLabel = document.getElementById('font-size-value');
+    const reset = document.getElementById('font-size-reset');
+    const sidebarSelect = document.getElementById('sidebar-direction');
+    let activeTabId = null;
+    const normalizeSize = value => Number.isInteger(Number(value)) && +value >= 12 && +value <= 28 ? +value : 0;
+    const render = enabled => {
+      button.dataset.enabled = String(enabled);
+      button.setAttribute('aria-checked', String(enabled));
+      button.setAttribute('aria-label', enabled ? 'Disable RTL' : 'Enable RTL');
+      eye.textContent = enabled ? '📡' : '🤖';
+    };
+    const renderSize = size => {
+      const value = normalizeSize(size);
+      sizeInput.value = String(value || 16);
+      sizeLabel.textContent = value ? value + ' px' : 'Default';
+      sizeLabel.dataset.value = String(value);
+    };
+    async function sync() {
+      if (!activeTabId) return;
+      try {
+        const state = await chrome.storage.local.get({buttonOn:false, fontChoice:'default', fontSize:0, sidebarDirection:'auto'});
+        try { await chrome.tabs.sendMessage(activeTabId, {type:'chatgpt-rtl-ping'}); }
+        catch { await chrome.scripting.executeScript({target:{tabId:activeTabId}, files:['content.js']}); }
+        await chrome.tabs.sendMessage(activeTabId, {
+          type:'chatgpt-rtl-sync', enabled:state.buttonOn === true,
+          font:state.fontChoice, fontSize:normalizeSize(state.fontSize), sidebarDirection:state.sidebarDirection
+        });
+        notice.textContent = '';
+      } catch (e) { notice.textContent = 'Reload ChatGPT to apply changes.'; console.warn(e); }
     }
-  });
-});
-
-// Function to update the UI based on the button state
-const updateUI = (buttonOn) => {
-  const eye = document.querySelector(".eye");
-  const button = document.querySelector(".button");
-  const circle = document.querySelector(".circle");
-
-  if (buttonOn) {
-    eye.innerHTML = "📡";
-    button.style.animation = "transformToBlue 0.5s ease-in-out 0s forwards";
-    circle.style.animation = "moveCircleRight 0.5s ease-in-out 0s forwards";
-  } else {
-    eye.innerHTML = "🤖";
-    button.style.animation = "transformToYellow 0.5s ease-in-out 0s forwards";
-    circle.style.animation = "moveCircleLeft 0.5s ease-in-out 0s forwards";
-  }
-};
-
-// Function to retrieve and update button state from local storage
-const updateButtonStateFromLocalStorage = () => {
-  chrome.storage.local.get(["buttonOn"], (result) => {
-    const buttonOn = result.buttonOn && false;
-    updateUI(buttonOn);
-    if (buttonOn) {
-      callAddStyle();
-    } else {
-      removeScript();
-    }
-  });
-};
-
-// Function to callAddStyle based on the button state
-const callAddStyle = () => {
-  getCurrentTab().then((tab) => {
-    const { id, url } = tab;
-    chrome.scripting.executeScript({
-      target: { tabId: id, allFrames: true },
-      files: ["assets/script/addContent.js"],
+    try {
+      const [tab] = await chrome.tabs.query({active:true,currentWindow:true});
+      if (tab && /^https:\/\/(chatgpt\.com|chat\.openai\.com)(\/|$)/i.test(tab.url || '')) activeTabId = tab.id;
+      else { button.disabled = true; notice.textContent = 'Open chatgpt.com to enable RTL.'; }
+      const state = await chrome.storage.local.get({buttonOn:false,fontChoice:'default',fontSize:0,sidebarDirection:'auto'});
+      render(state.buttonOn === true);
+      renderSize(state.fontSize);
+      sidebarSelect.value = ['auto','rtl','ltr'].includes(state.sidebarDirection) ? state.sidebarDirection : 'auto';
+      let installed = [];
+      try { installed = await chrome.fontSettings.getFontList(); }
+      catch (e) { notice.textContent = 'Cannot read installed fonts. Reload the extension.'; console.warn(e); }
+      const names = [...new Set(installed.map(f => f.fontId).filter(Boolean))].sort((a,b) => a.localeCompare(b));
+      for (const name of names) systemFonts.appendChild(new Option(name, name));
+      // Keep legacy preference if available; otherwise gracefully use default.
+      const previous = state.fontChoice === 'b-nazanin' ? names.find(n => /^(b ?nazanin)$/i.test(n)) : state.fontChoice;
+      fonts.value = names.includes(previous) ? previous : 'default';
+      renderFontSource();
+      if (fonts.value !== state.fontChoice) await chrome.storage.local.set({fontChoice:fonts.value});
+      if (activeTabId) await sync();
+    } catch(e) { notice.textContent = 'Extension initialization failed.'; console.error(e); }
+    button.classList.add('initialized');
+    sidebarSelect.addEventListener('change', async () => {
+      await chrome.storage.local.set({sidebarDirection:sidebarSelect.value});
+      await sync();
     });
-  });
-};
-
-// Function to removeScript based on the button state
-const removeScript = () => {
-  getCurrentTab().then((tab) => {
-    const { id, url } = tab;
-    chrome.scripting.executeScript({
-      target: { tabId: id, allFrames: true },
-      files: ["assets/script/removeContent.js"],
+    fonts.addEventListener('change', async () => {
+      renderFontSource();
+      await chrome.storage.local.set({fontChoice:fonts.value});
+      await sync();
     });
-  });
-};
-
-// Function to get the current tab
-const getCurrentTab = async () => {
-  let queryOptions = { active: true };
-  let [tab] = await chrome.tabs.query(queryOptions);
-  return tab;
-};
-
-// Add event listener to the button
-document.querySelector(".button").addEventListener("click", () => {
-  // Toggle the button state
-  chrome.storage.local.get(["buttonOn"], (result) => {
-    const newButtonState = !result.buttonOn; // Toggle the state
-    chrome.storage.local.set({ buttonOn: newButtonState }, () => {
-      updateUI(newButtonState);
-      if (newButtonState) {
-        callAddStyle();
-      } else {
-        removeScript();
+    button.addEventListener('click', async () => {
+      if (button.disabled) return;
+      const next = button.dataset.enabled !== 'true';
+      await chrome.storage.local.set({buttonOn:next});
+      render(next);
+      await sync();
+    });
+    sizeInput.addEventListener('input', () => {
+      renderSize(sizeInput.value);
+      if (activeTabId) chrome.tabs.sendMessage(activeTabId, {
+        type:'chatgpt-rtl-sync',
+        enabled: button.dataset.enabled === 'true',
+        font:fonts.value, fontSize:normalizeSize(sizeInput.value), sidebarDirection:sidebarSelect.value
+      }).catch(()=>{});
+    });
+    sizeInput.addEventListener('change', async () => {
+      await chrome.storage.local.set({fontSize:normalizeSize(sizeInput.value)});
+      await sync();
+    });
+    reset.addEventListener('click', async () => {
+      renderSize(0);
+      await chrome.storage.local.set({fontSize:0});
+      await sync();
+    });
+    chrome.storage.onChanged.addListener((changes,area) => {
+      if(area !== 'local') return;
+      if(changes.buttonOn) render(changes.buttonOn.newValue === true);
+      if(changes.fontSize) renderSize(changes.fontSize.newValue);
+      if(changes.sidebarDirection) sidebarSelect.value = changes.sidebarDirection.newValue;
+      if(changes.fontChoice && [...fonts.options].some(o=>o.value===changes.fontChoice.newValue)) {
+        fonts.value=changes.fontChoice.newValue;
+        renderFontSource();
       }
     });
   });
-});
-
-// Update the UI based on the button state when the content script is loaded
-updateButtonStateFromLocalStorage();
+})();
